@@ -31,13 +31,9 @@ class ProductController extends Controller
             'description' => 'required|string',
             'price' => 'required|numeric',
             'quantity' => 'required|integer',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'category_id' => 'nullable|exists:categories,id'
         ]);
-
-        if($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
-            $validatedData['image'] = $imagePath;
-        }
 
         if($validatedData['price'] < 0 || $validatedData['quantity'] < 0) {
             return response()->json([
@@ -53,12 +49,17 @@ class ProductController extends Controller
             ], 409);
         }
 
+        if($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('products', 'public');
+            $validatedData['image'] = $imagePath;
+        }
+
         $product = ProductModel::create($validatedData);
 
         return response()->json([
             'Status' => 'Success',
             'Message' => 'Product created successfully',
-            'Data' => $product
+            'Data' => $product->load('category')
         ], 201);
     }
 
@@ -87,7 +88,8 @@ class ProductController extends Controller
             'description' => 'required|string',
             'price' => 'required|numeric',
             'quantity' => 'required|integer',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'category_id' => 'nullable|exists:categories,id'
         ]);
 
         if($request->hasFile('image')) {
@@ -105,10 +107,14 @@ class ProductController extends Controller
 
         $product->update($validatedData);
 
+        if ($request->has('category_ids')) {
+            $product->categories()->sync($request->category_ids);
+        }
+
         return response()->json([
             'Status' => 'Success',
             'Message' => 'Product updated successfully',
-            'Data' => $product
+            'Data' => $product->load('categories')
         ]   );
     }
 
