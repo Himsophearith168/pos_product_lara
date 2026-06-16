@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProductModel;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Storage;
 class ProductController extends Controller
 {
     /**
@@ -30,31 +31,30 @@ class ProductController extends Controller
             'description' => 'required|string',
             'price' => 'required|numeric',
             'quantity' => 'required|integer',
-            'image' => 'nullable|string|max:255'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
-        if(!$validatedData) {
-            return response()->json([
-                'Status' => 'Error',
-                'Message' => 'Invalid data provided'
-            ], 422);
-        }
+
         if($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images', 'public');
+            $imagePath = $request->file('image')->store('products', 'public');
             $validatedData['image'] = $imagePath;
         }
+
         if($validatedData['price'] < 0 || $validatedData['quantity'] < 0) {
             return response()->json([
                 'Status' => 'Error',
                 'Message' => 'Price and quantity must be non-negative'
             ], 422);
         }
+
         if(ProductModel::where('name', $validatedData['name'])->exists()) {
             return response()->json([
                 'Status' => 'Error',
                 'Message' => 'Product with this name already exists'
             ], 409);
         }
+
         $product = ProductModel::create($validatedData);
+
         return response()->json([
             'Status' => 'Success',
             'Message' => 'Product created successfully',
@@ -81,30 +81,30 @@ class ProductController extends Controller
     public function update(Request $request, string $id)
     {
         $product = ProductModel::findOrFail($id);
+
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric',
             'quantity' => 'required|integer',
-            'image' => 'nullable|string|max:255'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
-        if(!$validatedData) {
-            return response()->json([
-                'Status' => 'Error',
-                'Message' => 'Invalid data provided'
-            ], 422);
-        }
+
         if($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images', 'public');
+            
+            $imagePath = $request->file('image')->store('products', 'public');
             $validatedData['image'] = $imagePath;
         }
+
         if($validatedData['price'] < 0 || $validatedData['quantity'] < 0) {
             return response()->json([
                 'Status' => 'Error',
                 'Message' => 'Price and quantity must be non-negative'
             ], 422);
         }
+
         $product->update($validatedData);
+
         return response()->json([
             'Status' => 'Success',
             'Message' => 'Product updated successfully',
